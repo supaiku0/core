@@ -284,7 +284,9 @@ module.exports = class QueryBuiler {
    * @return {QueryBuilder}
    */
   async all () {
-    return this.connection.query(SqlBuilder.build(this.clauses), {
+    const { query, replacements } = SqlBuilder.build(this.clauses)
+    return this.connection.query(query, {
+      replacements: replacements,
       type: QueryTypes.SELECT
     })
   }

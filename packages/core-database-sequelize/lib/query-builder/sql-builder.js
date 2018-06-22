@@ -1,3 +1,5 @@
+const container = require('@arkecosystem/core-container')
+const logger = container.resolvePlugin('logger')
 const { camelCase, upperFirst } = require('lodash')
 const escape = require('./utils/escape')
 
@@ -8,12 +10,14 @@ class SqlBuilder {
    * @return {String}
    */
   build (clauses) {
+    this.__replacements = []
+
     const clauseOrder = [
       'select', 'from', 'where',
       'groupBy', 'orderBy', 'limit', 'offset'
     ]
 
-    return clauseOrder
+    const query = clauseOrder
       .map(clause => {
         if (!clauses[clause]) {
           return false
@@ -24,6 +28,10 @@ class SqlBuilder {
       .filter(item => !!item)
       .join('')
       .trim()
+
+    logger.info(`Query: ${query}`);
+
+    return { query, replacements: this.__replacements }
   }
 
   /**
@@ -58,12 +66,18 @@ class SqlBuilder {
   __buildWhere (clauses) {
     const map = (item) => {
       if (item.hasOwnProperty('from') && item.hasOwnProperty('to')) {
-        return `${escape(item.column)} ${item.operator} ${escape(item.from)} AND ${escape(item.to)}`
+        this.__replacements.push(item.from)
+        this.__replacements.push(item.to)
+
+        return `${escape(item.column)} ${item.operator} ? AND ?`
       }
 
       if (['IN', 'NOT IN'].includes(item.operator)) {
         if (Array.isArray(item.value)) {
-          item.value = item.value.map(value => escape(value, true)).join(',')
+          item.value = item.value.map(value => {
+            this.__replacements.push(value)
+            return '?'
+          }).join(',')
         }
 
         return `${escape(item.column)} ${item.operator} (${item.value})`
@@ -73,7 +87,8 @@ class SqlBuilder {
         return `${escape(item.column)} ${item.operator}`
       }
 
-      return `${escape(item.column)} ${item.operator} ${escape(item.value, true)}`
+      this.__replacements.push(item.value)
+      return `${escape(item.column)} ${item.operator} ?`
     }
 
     const andQuery = Object
