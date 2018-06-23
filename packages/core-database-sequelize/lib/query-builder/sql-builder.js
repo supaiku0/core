@@ -1,5 +1,5 @@
 const { camelCase, upperFirst } = require('lodash')
-const escape = require('./utils/escape')
+const escape = require('./utils/sql-string').escape
 
 class SqlBuilder {
   /**
@@ -33,7 +33,7 @@ class SqlBuilder {
    */
   __buildSelect (clauses) {
     const columns = clauses.select.columns
-      .map(column => escape(column))
+      .map(column => column === '*' ? column : escape(column, true))
 
     const aggregates = clauses.select.aggregates
       .map(column => column)
@@ -47,7 +47,7 @@ class SqlBuilder {
    * @return {String}
    */
   __buildFrom (clauses) {
-    return `FROM ${escape(clauses.from)} `
+    return `FROM ${escape(clauses.from, true)} `
   }
 
   /**
@@ -58,22 +58,18 @@ class SqlBuilder {
   __buildWhere (clauses) {
     const map = (item) => {
       if (item.hasOwnProperty('from') && item.hasOwnProperty('to')) {
-        return `${escape(item.column)} ${item.operator} ${escape(item.from)} AND ${escape(item.to)}`
+        return `${escape(item.column, true)} ${item.operator} ${escape(item.from)} AND ${escape(item.to)}`
       }
 
       if (['IN', 'NOT IN'].includes(item.operator)) {
-        if (Array.isArray(item.value)) {
-          item.value = item.value.map(value => escape(value, true)).join(',')
-        }
-
-        return `${escape(item.column)} ${item.operator} (${item.value})`
+        return `${escape(item.column, true)} ${item.operator} (${escape(item.value)})`
       }
 
       if (['IS NULL', 'IS NOT NULL'].includes(item.operator)) {
-        return `${escape(item.column)} ${item.operator}`
+        return `${escape(item.column, true)} ${item.operator}`
       }
 
-      return `${escape(item.column)} ${item.operator} ${escape(item.value, true)}`
+      return `${escape(item.column, true)} ${item.operator} ${escape(item.value)}`
     }
 
     const andQuery = Object
@@ -120,7 +116,7 @@ class SqlBuilder {
   __buildOrderBy (clauses) {
     const values = Object
       .values(clauses.orderBy)
-      .map(item => `${escape(item.column)} ${item.direction.toUpperCase()}`)
+      .map(item => `${escape(item.column, true)} ${item.direction.toUpperCase()}`)
 
     return `ORDER BY ${values.join(',')} `
   }

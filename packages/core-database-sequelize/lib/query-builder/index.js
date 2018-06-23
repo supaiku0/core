@@ -1,3 +1,5 @@
+const container = require('@arkecosystem/core-container')
+const logger = container.resolvePlugin('logger')
 const { QueryTypes } = require('sequelize')
 const clauses = require('./clauses')
 const SqlBuilder = require('./sql-builder')
@@ -284,7 +286,9 @@ module.exports = class QueryBuiler {
    * @return {QueryBuilder}
    */
   async all () {
-    return this.connection.query(SqlBuilder.build(this.clauses), {
+    const query = SqlBuilder.build(this.clauses)
+    logger.info(`Query: ${query}`)
+    return this.connection.query(query, {
       type: QueryTypes.SELECT
     })
   }
