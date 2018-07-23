@@ -445,15 +445,20 @@ module.exports = class Block {
    * @static
    */
   static serializeFull (block) {
+    const serializedBlock = Block.serialize(block, true);
+    const transactions = block.transactions
+
     const buf = new ByteBuffer(1024, true)
-    buf.append(Block.serialize(block, true))
+      .append(serializedBlock)
+      .skip(transactions.length * 4)
 
-    const serializedTransactions = block.transactions.map(transaction => Transaction.serialize(transaction))
-    serializedTransactions.forEach(transaction => buf.writeUInt32(transaction.length))
-    serializedTransactions.forEach(transaction => buf.append(transaction))
-    buf.flip()
+    for (let i = 0; i < transactions.length; i++) {
+      const serialized = Transaction.serialize(transactions[i])
+      buf.writeUint32(serialized.length, serializedBlock.length + (i * 4))
+      buf.append(serialized)
+    }
 
-    return buf.toBuffer()
+    return buf.flip().toBuffer()
   }
 
   /*
