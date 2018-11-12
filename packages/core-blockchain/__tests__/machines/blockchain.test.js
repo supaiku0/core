@@ -111,11 +111,11 @@ describe('Blockchain machine', () => {
       })
     })
 
-    it('should transition to `processingBlock` on `NEWBLOCK`', () => {
+    it('should transition to `processNewBlock` on `NEWBLOCK`', () => {
       expect(machine).toTransition({
         from: 'idle',
         on: 'NEWBLOCK',
-        to: 'processingBlock',
+        to: 'processNewBlock',
       })
     })
 
@@ -124,27 +124,28 @@ describe('Blockchain machine', () => {
     })
   })
 
-  describe('state `processingBlock`', () => {
-    it('should execute the `processBlock` action when is entered', () => {
-      expect(machine).toExecuteOnEntry({
-        state: 'processingBlock',
-        actions: ['processBlock'],
-      })
-    })
-
-    it('should transition to `idle` on `SUCCESS`', () => {
+  describe('state `processNewBlock`', () => {
+    it('should transition to `idle` on `PROCESSFINISHED`', () => {
       expect(machine).toTransition({
-        from: 'processingBlock',
-        on: 'SUCCESS',
+        from: 'processNewBlock',
+        on: 'PROCESSFINISHED',
         to: 'idle',
       })
     })
 
-    it('should transition to `fork` on `FAILURE`', () => {
+    it('should transition to `fork` on `FORK`', () => {
       expect(machine).toTransition({
-        from: 'processingBlock',
-        on: 'FAILURE',
+        from: 'processNewBlock',
+        on: 'FORK',
         to: 'fork',
+      })
+    })
+
+    it('should transition to `stopped` on `STOP`', () => {
+      expect(machine).toTransition({
+        from: 'processNewBlock',
+        on: 'STOP',
+        to: 'stopped',
       })
     })
   })
