@@ -47,6 +47,8 @@ module.exports = class Blockchain {
           nextState.actions,
         )}`,
       )
+    } else {
+      logger.warn(`State ${JSON.stringify(nextState.value)} has no actions for event '${event}'.`)
     }
 
     this.state.blockchain = nextState
