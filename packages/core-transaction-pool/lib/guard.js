@@ -139,9 +139,15 @@ module.exports = class TransactionGuard {
   async addToTransactionPool(...types) {
     const transactions = flatten(types.map(type => this[type]))
     const added = await this.pool.addTransactions(transactions)
-    this.broadcast = this.broadcast.filter(transaction =>
-      added.includes(transaction),
-    )
+    this.broadcast = this.broadcast.filter(transaction => {
+      const addedToPool = added.includes(transaction)
+      if (!addedToPool) {
+        this.pool.walletManager.revertTransaction(transaction)
+        return false
+      }
+
+      return true
+    })
   }
 
   /**
