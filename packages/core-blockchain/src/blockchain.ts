@@ -484,8 +484,10 @@ export class Blockchain {
             if (isValid) {
                 this.forkBlock(block);
             } else {
+                this.state.lastDownloadedBlock = lastBlock;
+
                 logger.info(
-                    `Forked block disregarded because it is not allowed to forge. Caused by delegate: ${
+                    `Forked block ${block.data.height.toLocaleString()} disregarded because it is not allowed to forge. Caused by delegate: ${
                         block.data.generatorPublicKey
                     } :bangbang:`,
                 );
