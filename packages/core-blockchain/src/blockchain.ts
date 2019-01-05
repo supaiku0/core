@@ -2,7 +2,7 @@
 import { app } from "@arkecosystem/core-container";
 import { PostgresConnection } from "@arkecosystem/core-database-postgres";
 import { Blockchain as blockchain, EventEmitter, Logger, P2P, TransactionPool } from "@arkecosystem/core-interfaces";
-import { models, slots } from "@arkecosystem/crypto";
+import { isException, models, slots } from "@arkecosystem/crypto";
 
 import delay from "delay";
 import pluralize from "pluralize";
@@ -369,7 +369,7 @@ export class Blockchain implements blockchain.IBlockchain {
      * @return {(Function|void)}
      */
     public async processBlock(block, callback) {
-        if (!block.verification.verified && !this.database.__isException(block.data)) {
+        if (!block.verification.verified && !isException(block.data)) {
             logger.warn(`Block ${block.data.height.toLocaleString()} disregarded because verification failed :scroll:`);
             logger.warn(JSON.stringify(block.verification, null, 4));
 
