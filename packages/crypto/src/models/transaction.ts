@@ -6,7 +6,7 @@ import { createHash } from "crypto";
 import { TransactionTypes } from "../constants";
 import { crypto } from "../crypto/crypto";
 import { configManager } from "../managers";
-import { Bignum } from "../utils";
+import { Bignum, isException } from "../utils";
 
 const { transactionIdFixTable } = configManager.getPreset("mainnet").exceptions;
 
@@ -71,7 +71,7 @@ export class Transaction {
         }
 
         if (deserialized.type <= 4) {
-            deserialized.verified = crypto.verify(deserialized);
+            deserialized.verified = crypto.verify(deserialized) || isException(deserialized);
         } else {
             deserialized.verified = false;
         }
