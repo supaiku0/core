@@ -10,7 +10,7 @@ import { BlockProcessor, BlockProcessorResult } from "./processor";
 import { ProcessQueue, Queue, RebuildQueue } from "./queue";
 import { stateMachine } from "./state-machine";
 import { StateStorage } from "./state-storage";
-import { isBlockChained } from "./utils";
+import { BlockChainedStatus, isBlockChained } from "./utils";
 
 const logger = app.resolvePlugin<Logger.ILogger>("logger");
 const config = app.getConfig();
@@ -316,10 +316,7 @@ export class Blockchain implements blockchain.IBlockchain {
 
         // If the current chain height is H and we will be removing blocks [N, H],
         // then blocksToRemove[] will contain blocks [N - 1, H - 1].
-        const blocksToRemove = await this.database.getBlocks(
-            this.state.getLastBlock().data.height - nblocks,
-            nblocks,
-        );
+        const blocksToRemove = await this.database.getBlocks(this.state.getLastBlock().data.height - nblocks, nblocks);
 
         const revertLastBlock = async () => {
             // tslint:disable-next-line:no-shadowed-variable
@@ -404,7 +401,7 @@ export class Blockchain implements blockchain.IBlockchain {
         const lastBlock = this.state.getLastBlock();
 
         if (block.verification.verified) {
-            if (isBlockChained(lastBlock, block)) {
+            if (isBlockChained(lastBlock, block) === BlockChainedStatus.Chained) {
                 // save block on database
                 this.database.enqueueSaveBlock(block);
 

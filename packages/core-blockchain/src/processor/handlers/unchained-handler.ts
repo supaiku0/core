@@ -1,6 +1,7 @@
 import { app } from "@arkecosystem/core-container";
 import { models } from "@arkecosystem/crypto";
 import { Blockchain } from "../../blockchain";
+import { BlockChainedStatus } from "../../utils";
 import { BlockProcessorResult } from "../block-processor";
 import { BlockHandler } from "./block-handler";
 
@@ -10,12 +11,14 @@ enum UnchainedBlockStatus {
     EqualToLastBlock,
     GeneratorMismatch,
     DoubleForging,
+    InvalidSlot,
 }
 
 export class UnchainedHandler extends BlockHandler {
     public constructor(
         protected blockchain: Blockchain,
         protected block: models.Block,
+        private chainedStatus: BlockChainedStatus,
         private isValidGenerator: boolean,
     ) {
         super(blockchain, block);
@@ -38,7 +41,8 @@ export class UnchainedHandler extends BlockHandler {
                 return BlockProcessorResult.Rejected;
             }
 
-            case UnchainedBlockStatus.GeneratorMismatch: {
+            case UnchainedBlockStatus.GeneratorMismatch:
+            case UnchainedBlockStatus.InvalidSlot: {
                 return BlockProcessorResult.Rejected;
             }
 
@@ -70,6 +74,9 @@ export class UnchainedHandler extends BlockHandler {
             );
 
             return UnchainedBlockStatus.AlreadyInBlockchain;
+        } else if (this.chainedStatus === BlockChainedStatus.InvalidSlot) {
+            this.logger.debug(`Discarding block ${this.block.data.height.toLocaleString()} because of a bad slot.`);
+            return UnchainedBlockStatus.InvalidSlot;
         } else if (this.block.data.height === lastBlock.data.height && this.block.data.id === lastBlock.data.id) {
             this.logger.debug(`Block ${this.block.data.height.toLocaleString()} just received :chains:`);
             return UnchainedBlockStatus.EqualToLastBlock;

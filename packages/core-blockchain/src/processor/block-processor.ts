@@ -4,7 +4,7 @@ import { app } from "@arkecosystem/core-container";
 import { Logger } from "@arkecosystem/core-interfaces";
 import { isException, models } from "@arkecosystem/crypto";
 import { Blockchain } from "../blockchain";
-import { isBlockChained } from "../utils/is-block-chained";
+import { BlockChainedStatus, isBlockChained } from "../utils/is-block-chained";
 import { validateGenerator } from "../utils/validate-generator";
 
 import {
@@ -46,8 +46,8 @@ export class BlockProcessor {
 
         const isValidGenerator = await validateGenerator(block);
         const isChained = isBlockChained(this.blockchain.getLastBlock(), block);
-        if (!isChained) {
-            return new UnchainedHandler(this.blockchain, block, isValidGenerator);
+        if (isChained !== BlockChainedStatus.Chained) {
+            return new UnchainedHandler(this.blockchain, block, isChained, isValidGenerator);
         }
 
         if (!isValidGenerator) {
@@ -62,9 +62,6 @@ export class BlockProcessor {
         return new AcceptBlockHandler(this.blockchain, block);
     }
 
-    /**
-     * Checks if the given block is verified or an exception.
-     */
     private verifyBlock(block: models.Block): boolean {
         const verified = block.verification.verified;
         if (!verified) {
@@ -80,9 +77,6 @@ export class BlockProcessor {
         return true;
     }
 
-    /**
-     * Checks if the given block contains an already forged transaction.
-     */
     private async checkBlockContainsForgedTransactions(block: models.Block): Promise<boolean> {
         if (block.transactions.length > 0) {
             const forgedIds = await this.blockchain.database.getForgedTransactionsIds(

@@ -1,7 +1,7 @@
 import "jest-extended";
 
 import { models, slots } from "@arkecosystem/crypto";
-import { isBlockChained } from "../../src/utils";
+import { BlockChainedStatus, isBlockChained } from "../../src/utils";
 
 describe("isChained", () => {
     it("should be ok", () => {
@@ -23,7 +23,7 @@ describe("isChained", () => {
             },
         } as models.IBlock;
 
-        expect(isBlockChained(previousBlock, nextBlock)).toBeTrue();
+        expect(isBlockChained(previousBlock, nextBlock)).toBe(BlockChainedStatus.Chained);
     });
 
     it("should not chain when previous block does not match", () => {
@@ -45,7 +45,7 @@ describe("isChained", () => {
             },
         } as models.IBlock;
 
-        expect(isBlockChained(previousBlock, nextBlock)).toBeFalse();
+        expect(isBlockChained(previousBlock, nextBlock)).toBe(BlockChainedStatus.InvalidPreviousBlock);
     });
 
     it("should not chain when next height is not plus 1", () => {
@@ -67,7 +67,7 @@ describe("isChained", () => {
             },
         } as models.IBlock;
 
-        expect(isBlockChained(previousBlock, nextBlock)).toBeFalse();
+        expect(isBlockChained(previousBlock, nextBlock)).toBe(BlockChainedStatus.InvalidHeight);
     });
 
     it("should not chain when same slot", () => {
@@ -84,12 +84,12 @@ describe("isChained", () => {
             data: {
                 id: "2",
                 timestamp: slots.getSlotTime(0),
-                height: 3,
+                height: 2,
                 previousBlock: "1",
             },
         } as models.IBlock;
 
-        expect(isBlockChained(previousBlock, nextBlock)).toBeFalse();
+        expect(isBlockChained(previousBlock, nextBlock)).toBe(BlockChainedStatus.InvalidSlot);
     });
 
     it("should not chain when lower slot", () => {
@@ -106,11 +106,11 @@ describe("isChained", () => {
             data: {
                 id: "2",
                 timestamp: slots.getSlotTime(0),
-                height: 3,
+                height: 2,
                 previousBlock: "1",
             },
         } as models.IBlock;
 
-        expect(isBlockChained(previousBlock, nextBlock)).toBeFalse();
+        expect(isBlockChained(previousBlock, nextBlock)).toBe(BlockChainedStatus.InvalidSlot);
     });
 });

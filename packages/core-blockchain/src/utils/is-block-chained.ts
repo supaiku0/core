@@ -1,6 +1,13 @@
 import { models, slots } from "@arkecosystem/crypto";
 
-export const isBlockChained = (previousBlock: models.IBlock, nextBlock: models.IBlock): boolean => {
+export enum BlockChainedStatus {
+    Chained,
+    InvalidPreviousBlock,
+    InvalidHeight,
+    InvalidSlot,
+}
+
+export const isBlockChained = (previousBlock: models.IBlock, nextBlock: models.IBlock): BlockChainedStatus => {
     const followsPrevious = nextBlock.data.previousBlock === previousBlock.data.id;
     const isPlusOne = nextBlock.data.height === previousBlock.data.height + 1;
 
@@ -8,5 +15,17 @@ export const isBlockChained = (previousBlock: models.IBlock, nextBlock: models.I
     const nextSlot = slots.getSlotNumber(nextBlock.data.timestamp);
     const isAfterPreviousSlot = previousSlot < nextSlot;
 
-    return followsPrevious && isPlusOne && isAfterPreviousSlot;
+    if (!followsPrevious) {
+        return BlockChainedStatus.InvalidPreviousBlock;
+    }
+
+    if (!isPlusOne) {
+        return BlockChainedStatus.InvalidHeight;
+    }
+
+    if (!isAfterPreviousSlot) {
+        return BlockChainedStatus.InvalidSlot;
+    }
+
+    return BlockChainedStatus.Chained;
 };
