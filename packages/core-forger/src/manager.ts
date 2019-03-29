@@ -105,7 +105,7 @@ export class ForgerManager {
 
                 await delay(200); // basically looping until we lock at beginning of next slot
 
-                return this.__monitor(round);
+                return process.nextTick(() => this.__monitor(round));
             }
 
             const delegate = this.__isDelegateActivated(round.currentForger.publicKey);
@@ -124,7 +124,7 @@ export class ForgerManager {
 
                 await delay(slots.getTimeInMsUntilNextSlot()); // we will check at next slot
 
-                return this.__monitor(round);
+                return process.nextTick(() => this.__monitor(round));
             }
 
             const networkState = await this.client.getNetworkState();
@@ -142,7 +142,7 @@ export class ForgerManager {
 
             await delay(slots.getTimeInMsUntilNextSlot()); // we will check at next slot
 
-            return this.__monitor(round);
+            return process.nextTick(() => this.__monitor(round));
         } catch (error) {
             // README: The Blockchain is not ready, monitor until it is instead of crashing.
             if (error.response && error.response.status === 503) {
@@ -150,7 +150,7 @@ export class ForgerManager {
 
                 await delay(2000);
 
-                return this.__monitor(round);
+                return process.nextTick(() => this.__monitor(round));
             }
 
             // README: The Blockchain is ready but an action still failed.
@@ -166,7 +166,7 @@ export class ForgerManager {
 
             this.client.emitEvent("forger.failed", error.message);
 
-            return this.__monitor(round);
+            return process.nextTick(() => this.__monitor(round));
         }
     }
 
