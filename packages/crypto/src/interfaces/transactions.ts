@@ -1,5 +1,6 @@
 import { ErrorObject } from "ajv";
 import { TransactionTypes } from "../enums";
+import { Overwrite } from "../types";
 import { BigNumber } from "../utils";
 
 export interface ITransaction {
@@ -74,39 +75,12 @@ export interface ITransactionData {
     payments?: { [key: string]: any };
 }
 
-export interface ITransactionJson {
-    version?: number;
-    network?: number;
-
-    type: TransactionTypes;
-    timestamp: number;
-    senderPublicKey: string;
-
+interface ITransactionJsonExtension {
     fee: string;
     amount: string;
-
-    expiration?: number;
-    recipientId?: string;
-
-    asset?: ITransactionAsset;
-    vendorField?: string;
-    vendorFieldHex?: string;
-
-    id?: string;
-    signature?: string;
-    secondSignature?: string;
-    signSignature?: string;
-    signatures?: string[];
-
-    blockId?: string;
-    sequence?: number;
-
-    timelock?: any;
-    timelockType?: number;
-
-    ipfsHash?: string;
-    payments?: { [key: string]: any };
 }
+
+export interface ITransactionJson extends Overwrite<ITransactionData, ITransactionJsonExtension> {}
 
 export interface ISchemaValidationResult<T = any> {
     value: T;

@@ -1,4 +1,5 @@
 import { ITransactionData } from "../interfaces";
+import { Overwrite } from "../types";
 import { BigNumber } from "../utils";
 import { ITransaction, ITransactionJson } from "./transactions";
 
@@ -42,24 +43,11 @@ export interface IBlockData {
     transactions?: ITransactionData[];
 }
 
-export interface IBlockJson {
-    id?: string;
-    idHex?: string;
-
-    timestamp: number;
-    version: number;
-    height: number;
-    previousBlockHex?: string;
-    previousBlock: string;
-    numberOfTransactions: number;
+interface IBlockJsonExtension {
     totalAmount: string;
     totalFee: string;
     reward: string;
-    payloadLength: number;
-    payloadHash: string;
-    generatorPublicKey: string;
-
-    blockSignature?: string;
-    serialized?: string;
     transactions?: ITransactionJson[];
 }
+
+export interface IBlockJson extends Overwrite<IBlockData, IBlockJsonExtension> {}
