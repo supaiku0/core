@@ -22,7 +22,7 @@ export function transformTransaction(model) {
         sender,
         recipient: data.recipientId,
         signature: data.signature,
-        signSignature: data.signSignature,
+        secondSignature: data.secondSignature,
         signatures: data.signatures,
         vendorField: data.vendorField,
         asset: data.asset,

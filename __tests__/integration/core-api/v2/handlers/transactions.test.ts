@@ -117,8 +117,10 @@ describe("API 2.0 - Transactions", () => {
 
                     const response = await utils[request]("GET", `transactions/unconfirmed/${transaction.id}`);
                     expect(response).toBeSuccessfulResponse();
-                    expect(response.data.data).toBeObject();
-                    expect(response.data.data).toHaveProperty("id", transaction.id);
+
+                    const actual = response.data.data;
+                    expect(actual.id).toBe(transaction.id);
+                    utils.expectTransaction(actual, true);
                 });
             },
         );

@@ -7,6 +7,7 @@ import { registerWithContainer, setUpContainer } from "../../../utils/helpers/co
 import { delegates } from "../../../utils/fixtures";
 import { generateRound } from "./utils/generate-round";
 
+import { Bignum, crypto } from "@arkecosystem/crypto";
 import { sortBy } from "@arkecosystem/utils";
 
 const round = generateRound(delegates.map(delegate => delegate.publicKey), 1);
@@ -36,6 +37,12 @@ async function setUp() {
     await databaseService.saveRound(round);
 
     await registerWithContainer(plugin, options);
+
+    const keys = crypto.getKeys("secret");
+    const wallet = databaseService.walletManager.findByPublicKey(keys.publicKey);
+    wallet.secondPublicKey = crypto.getKeys("second secret").publicKey;
+    wallet.balance = new Bignum(20000 * 1e8);
+
     await delay(1000); // give some more time for api server to be up
 }
 

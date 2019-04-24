@@ -72,7 +72,7 @@ class Helpers {
         expect(response.data.message).toBeString();
     }
 
-    public expectTransaction(transaction) {
+    public expectTransaction(transaction, secondSignature?: boolean) {
         expect(transaction).toBeObject();
         expect(transaction).toHaveProperty("id");
         expect(transaction).toHaveProperty("blockId");
@@ -86,6 +86,11 @@ class Helpers {
         }
 
         expect(transaction.signature).toBeString();
+
+        if (secondSignature) {
+            expect(transaction.secondSignature).toBeString();
+        }
+
         expect(transaction.confirmations).toBeNumber();
     }
 
@@ -150,7 +155,8 @@ class Helpers {
             .amount(1 * 1e8)
             .recipientId("AZFEPTWnn2Sn8wDZgCRF8ohwKkrmk2AZi1")
             .vendorField("test")
-            .sign("clay harbor enemy utility margin pretty hub comic piece aerobic umbrella acquire")
+            .sign("secret")
+            .secondSign("second secret")
             .getStruct();
 
         await httpie.post("http://127.0.0.1:4003/api/v2/transactions", {
