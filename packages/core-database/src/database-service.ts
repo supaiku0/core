@@ -3,8 +3,10 @@ import { ApplicationEvents } from "@arkecosystem/core-event-emitter";
 import { Blockchain, Database, EventEmitter, Logger, Shared } from "@arkecosystem/core-interfaces";
 import { TransactionHandlerRegistry } from "@arkecosystem/core-transactions";
 import { roundCalculator } from "@arkecosystem/core-utils";
-import { Bignum, configManager, crypto, HashAlgorithms, models, Transaction } from "@arkecosystem/crypto";
+import { Bignum, configManager, crypto, HashAlgorithms, models, slots, Transaction } from "@arkecosystem/crypto";
+import { TransactionTypes } from "@arkecosystem/crypto/dist/constants";
 import assert from "assert";
+import { WalletManager } from "./wallet-manager";
 
 const { Block } = models;
 
@@ -205,7 +207,7 @@ export class DatabaseService implements Database.IDatabaseService {
         return new Block(block);
     }
 
-    public async getBlocks(offset: number, limit: number) {
+    public async getBlocks(offset: number, limit: number): Promise<models.IBlockData[]> {
         let blocks = [];
 
         // The functions below return matches in the range [start, end], including both ends.
@@ -213,7 +215,7 @@ export class DatabaseService implements Database.IDatabaseService {
         const end = offset + limit - 1;
 
         if (app.has("state")) {
-            blocks = app.resolve("state").getLastBlocksByHeight(start, end);
+            blocks = app.resolve<Blockchain.IStateStorage>("state").getLastBlocksByHeight(start, end);
         }
 
         if (blocks.length !== limit) {
@@ -366,6 +368,73 @@ export class DatabaseService implements Database.IDatabaseService {
 
     public async loadBlocksFromCurrentRound() {
         this.blocksInCurrentRound = await this.getBlocksForRound();
+    }
+
+    public async buildRoundsTable(fromHeight = 0): Promise<void> {
+        const walletManager = new WalletManager();
+        const lastBlock = await this.getLastBlock();
+
+        const targetHeight = lastBlock.data.height;
+        const chunkSize = 20000;
+
+        console.time("ROUNDS");
+        for (let i = fromHeight || 1; i < targetHeight; i += chunkSize) {
+            console.time("CHUNK");
+            const blocks = await this.getBlocks(i, chunkSize);
+            let activeDelegates: Database.IDelegateWallet[] = [];
+
+            for (const block of blocks) {
+                const { height } = block;
+                const nextHeight = height === 1 ? 1 : height + 1;
+                const roundInfo = roundCalculator.calculateRound(nextHeight);
+
+                if (height === 1) {
+                    const { transactions } = block;
+                    for (const transaction of transactions) {
+                        if (transaction.type === TransactionTypes.Transfer) {
+                            const recipient = walletManager.findByAddress(transaction.recipientId);
+                            recipient.balance = new Bignum(transaction.amount);
+                        }
+                    }
+
+                    for (const transaction of transactions) {
+                        const sender = walletManager.findByPublicKey(transaction.senderPublicKey);
+                        sender.balance = sender.balance.minus(transaction.amount).minus(transaction.fee);
+
+                        if (transaction.type === TransactionTypes.DelegateRegistration) {
+                            sender.username = transaction.asset.delegate.username;
+                            walletManager.reindex(sender);
+                        }
+
+                        if (sender.balance.isLessThan(0)) {
+                            //  this.logger.warn(`Negative balance: ${sender}`);
+                        }
+                    }
+                } else {
+                    const slot = slots.getSlotNumber(block.timestamp);
+                    const position = slot % roundInfo.maxDelegates;
+
+                    if (activeDelegates[position].publicKey !== block.generatorPublicKey) {
+                        throw new Error(
+                            `Invalid generator for block ${block.id} at height ${height}: ${
+                                activeDelegates[position].publicKey
+                            }`,
+                        );
+                    }
+
+                    walletManager.applyBlock(new Block(block));
+                }
+
+                if (roundCalculator.isNewRound(nextHeight)) {
+                    const delegates = walletManager.loadActiveDelegateList(roundInfo);
+                    activeDelegates = await this.getActiveDelegates(roundInfo, delegates);
+                    await this.saveRound(activeDelegates);
+                }
+            }
+
+            console.timeEnd("CHUNK");
+        }
+        console.timeEnd("ROUNDS");
     }
 
     public async loadTransactionsForBlocks(blocks) {
