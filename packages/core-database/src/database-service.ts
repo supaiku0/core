@@ -411,6 +411,12 @@ export class DatabaseService implements Database.IDatabaseService {
                         }
                     }
                 } else {
+                    /**
+                     * TODO: replace the logic below with:
+                     *  const result = await blockProcessor.process(block);
+                     *  if (result !== BlockProcessorResult.Accepted) { throw new Error(...) }
+                     *  walletManager.applyBlock(new Block(block));
+                     */
                     const slot = slots.getSlotNumber(block.timestamp);
                     const position = slot % roundInfo.maxDelegates;
 
