@@ -1,4 +1,6 @@
 import { Database, State } from "@arkecosystem/core-interfaces";
+import { MoreThanOrEqual } from "typeorm";
+import { Round as RoundTypeorm } from "../entities/round";
 import { Round } from "../models";
 import { queries } from "../queries";
 import { Repository } from "./repository";
@@ -9,8 +11,11 @@ export class RoundsRepository extends Repository implements Database.IRoundsRepo
     }
 
     public async delete(round: number, db?: any): Promise<void> {
-        db = db || this.db;
-        return db.none(queries.rounds.delete, { round });
+        await this.typeorm.getRepository(RoundTypeorm).delete({
+            round: MoreThanOrEqual(round),
+        });
+
+        return;
     }
 
     public async insert(delegates: State.IWallet[]): Promise<void> {
@@ -22,7 +27,7 @@ export class RoundsRepository extends Repository implements Database.IRoundsRepo
             };
         });
 
-        await super.insert(rounds);
+        await this.typeorm.getRepository(RoundTypeorm).save(rounds);
     }
 
     public async update(items: object | object[]): Promise<void> {

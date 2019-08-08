@@ -5,6 +5,9 @@ import { Interfaces, Managers, Transactions } from "@arkecosystem/crypto";
 import chunk from "lodash.chunk";
 import path from "path";
 import pgPromise, { IMain } from "pg-promise";
+import { Connection, createConnection } from "typeorm";
+import { Round } from "./entities/round";
+import { Transaction } from "./entities/transaction";
 import { IMigration } from "./interfaces";
 import { migrations } from "./migrations";
 import { Model } from "./models";
@@ -37,6 +40,9 @@ export class PostgresConnection implements Database.IConnection {
     private migrationsRepository: MigrationsRepository;
     private cache: Map<any, any>;
 
+    // @ts-ignore
+    private connectionTypeorm: Connection;
+
     public constructor(readonly options: Record<string, any>, private readonly walletManager: State.IWalletManager) {}
 
     public async make(): Promise<Database.IConnection> {
@@ -49,6 +55,7 @@ export class PostgresConnection implements Database.IConnection {
         this.cache = new Map();
 
         try {
+            await this.connectTypeorm();
             await this.connect();
             this.exposeRepositories();
             this.registerQueryExecutor();
@@ -63,6 +70,20 @@ export class PostgresConnection implements Database.IConnection {
         }
 
         return undefined;
+    }
+
+    public async connectTypeorm(): Promise<void> {
+        this.connectionTypeorm = await createConnection({
+            type: "postgres",
+            host: "localhost",
+            port: 5432,
+            username: "postgres",
+            password: "postgres",
+            database: "ark_devnet",
+            entities: [Round, Transaction],
+            synchronize: false,
+            logging: true,
+        });
     }
 
     public async connect(): Promise<void> {
@@ -85,9 +106,9 @@ export class PostgresConnection implements Database.IConnection {
                 receive(data) {
                     camelizeColumns(pgp, data);
                 },
-                extend(object) {
+                extend: object => {
                     for (const repository of Object.keys(repositories)) {
-                        object[repository] = new repositories[repository](object, pgp, options);
+                        object[repository] = new repositories[repository](object, pgp, options, this.connectionTypeorm);
                     }
                 },
             },

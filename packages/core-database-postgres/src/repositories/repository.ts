@@ -1,12 +1,18 @@
 import { Database } from "@arkecosystem/core-interfaces";
 import { IMain } from "pg-promise";
 import { Executable, Query } from "sql";
+import { Connection } from "typeorm";
 import { Model } from "../models";
 
 export abstract class Repository implements Database.IRepository {
     protected model: Model;
 
-    constructor(protected readonly db, protected readonly pgp: IMain, private readonly options) {
+    constructor(
+        protected readonly db,
+        protected readonly pgp: IMain,
+        private readonly options,
+        protected typeorm: Connection,
+    ) {
         this.model = this.getModel();
     }
 
