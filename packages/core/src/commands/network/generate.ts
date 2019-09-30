@@ -334,7 +334,7 @@ $ ark config:generate --network=mynet7 --premine=120000000000 --delegates=47 --b
             allBytes.push(bytes);
             payloadLength += bytes.length;
             totalFee += transaction.fee;
-            totalAmount = totalAmount.plus(new Utils.BigNumber(transaction.amount));
+            totalAmount = totalAmount.plus(Utils.BigNumber.make(transaction.amount));
         }
 
         const payloadHash = Crypto.HashAlgorithms.sha256(Buffer.concat(allBytes));
@@ -370,7 +370,7 @@ $ ark config:generate --network=mynet7 --premine=120000000000 --delegates=47 --b
             blockBuffer[i] = hash[7 - i];
         }
 
-        return new Utils.BigNumber(blockBuffer.toString("hex"), 16).toString();
+        return Utils.BigNumber.make(blockBuffer.toString("hex"), 16).toString();
     }
 
     private signBlock(block, keys) {

@@ -53,7 +53,7 @@ export class Block implements IBlock {
     }
 
     public static toBytesHex(data): string {
-        const temp: string = data ? BigNumber.make(data).toString(16) : "";
+        const temp: string = data ? BigNumber.make(data).toString() : ""; // FIXME
 
         return "0".repeat(16 - temp.length) + temp;
     }

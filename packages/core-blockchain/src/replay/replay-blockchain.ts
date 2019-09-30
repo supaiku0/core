@@ -111,7 +111,7 @@ export class ReplayBlockchain extends Blockchain {
                 transaction.typeGroup === Enums.TransactionTypeGroup.Core
             ) {
                 const recipient: State.IWallet = this.walletManager.findByAddress(transaction.data.recipientId);
-                recipient.balance = new Utils.BigNumber(transaction.data.amount);
+                recipient.balance = Utils.BigNumber.make(transaction.data.amount);
             }
         }
 
